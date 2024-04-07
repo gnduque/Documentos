@@ -8,29 +8,37 @@ Created on Wed Mar 27 23:44:14 2024
 import pandas as pd
 from tqdm import tqdm
 
-# Leer el archivo Excel, ignorando la fila 2
-archivo_excel = r"C:\Users\ADMIN\Desktop\Documentos\Datos_estaciones\Datos_proceso_1\Belisario.xlsx"
-datos = pd.read_excel(archivo_excel, skiprows=[2])
 
-# Convertir la columna "Fecha" al formato datetime
-datos["Fecha"] = pd.to_datetime(datos["Fecha"])
+localidades = ["Belisario","Carapungo", "Centro", "Cotocollao", "ElCamal", "Guamani", "LosChillos", "SanAntonio", "Tumbaco"]
 
-# Establecer la columna "Fecha" como índice
-datos.set_index("Fecha", inplace=True)
+for localidad in tqdm(localidades, desc="Procesando localidades"):
+    archivo = rf"C:\Users\ADMIN\Desktop\Documentos\Datos_locales_estaciones\Datos_proceso_1\{localidad}.xlsx"
+    df = pd.read_excel(archivo, header=0, skiprows=[1])
+    df['Fecha'] = pd.to_datetime(df['Fecha'])
+    df['Fecha'] = df['Fecha'].apply(lambda fecha: fecha.replace(minute=0, second=0))
+    df.set_index('Fecha', inplace=True)
 
-# Calcular el número total de días para la barra de progreso
-total_dias = (datos.index.max() - datos.index.min()).days
+    # Diccionario de operaciones predeterminadas
+    operaciones = {
+        'NO2': 'mean',
+        'O3': 'mean',
+        'PM25': 'mean',
+        'PRE': 'sum',
+        'RS': 'mean',
+        'SO2': 'mean',
+        'TMP': 'mean',
+        'VEL': 'mean',
+        'CO': 'mean',
+        'DIR': 'mean',
+        'HUM': 'mean',
+        'LLU': 'mean'
+    }
 
-# Crear una barra de progreso
-with tqdm(total=total_dias, desc="Re-muestreo") as pbar:
-    # Re-muestrear los datos para obtener valores diarios
-    datos_diarios = datos.resample('D').mean()  # Re-muestreo para obtener el promedio diario
-    
-    # Actualizar la barra de progreso
-    pbar.update(1)
+    # Eliminar columnas que no existen en el DataFrame
+    operaciones = {col: op for col, op in operaciones.items() if col in df.columns}
 
-# Guardar los datos re-muestreados en un nuevo archivo Excel
-archivo_salida = r"C:\Users\ADMIN\Desktop\Documentos\Datos_estaciones\Datos_proceso_2\diarios_Belisario.xlsx"
-datos_diarios.to_excel(archivo_salida)
+    # Resample y procesamiento de los datos
+    df_resampled = df.resample('D').agg(operaciones)
 
-print("Datos re-muestreados y guardados en", archivo_salida)
+    nueva_ruta = rf"C:\Users\ADMIN\Desktop\Documentos\Datos_locales_estaciones\Datos_proceso_2\diarios_{localidad}.csv"
+    df_resampled.to_csv(nueva_ruta, index=True)
