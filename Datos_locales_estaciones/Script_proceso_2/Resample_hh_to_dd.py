@@ -23,7 +23,7 @@ for localidad in tqdm(localidades, desc="Procesando localidades"):
         'NO2': 'mean',
         'O3': 'mean',
         'PM25': 'mean',
-        'PRE': 'sum',
+        'PRE': 'mean',
         'RS': 'mean',
         'SO2': 'mean',
         'TMP': 'mean',
@@ -31,7 +31,7 @@ for localidad in tqdm(localidades, desc="Procesando localidades"):
         'CO': 'mean',
         'DIR': 'mean',
         'HUM': 'mean',
-        'LLU': 'mean'
+        'LLU': 'sum'
     }
 
     # Eliminar columnas que no existen en el DataFrame
