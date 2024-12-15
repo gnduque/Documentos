@@ -1,37 +1,35 @@
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-from scipy.stats import zscore
 import os
+from scipy.stats import zscore
 
-# Path to the data directory
-data_dir = r'C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Datos_locales_estaciones\Datosproceso_3'
-
-# List of files to process
-stations = [
-    "modified_Carapungo.csv", "modified_SanAntonio.csv", "modified_Tumbaco.csv",
-    "modified_Guamani.csv", "modified_Cotocollao.csv", "modified_Belisario.csv",
-    "modified_Centro.csv", "modified_LosChillos.csv", "modified_ElCamal.csv"
+# Lista de archivos a procesar
+files = [
+    "Belisario.csv", "Carapungo.csv", "Centro.csv", 
+    "Cotocollao.csv", "ElCamal.csv", "Guamani.csv", 
+    "LosChillos.csv", "SanAntonio.csv", "Tumbaco.csv"
 ]
 
-# Updated ranges
+# Directorio donde se encuentran los archivos
+data_dir = r'C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Datos_locales_estaciones\Datosproceso_3'
+
+# Rango de valores para las columnas
 ranges = {
     'NO2': (0, 100),
-    'O3': (0, 85),
+    'O3': (0, 105),
     'PM25': (0, 300),
     'PRE': (200, 780),
-    'RS': (0, 1100),
+    'RS': (0, 1350),
     'SO2': (0, 200),
     'TMP': (7, 28),
     'VEL': (0, 8),
-    'CO': (0, 4),
+    'CO': (0, 20),
     'DIR': (0, 360),
-    'HUM': (60, 90),
-    'LLU': (0, 70)
+    'HUM': (60, 100),
+    'LLU': (0, 85)
 }
 
-# Updated operations
+# Operaciones para obtener el promedio
 default_operations = {
     'NO2': 'mean',
     'O3': 'mean',
@@ -49,86 +47,81 @@ default_operations = {
 }
 
 san_antonio_operations = default_operations.copy()
-for col in ['CO', 'NO2']:
+for col in ['CO', 'NO2','SO2']:
     san_antonio_operations.pop(col, None)
 
 tumbaco_operations = default_operations.copy()
 tumbaco_operations.pop('SO2', None)
 
-# Prepare a list to hold AOD correlation results
+# Lista para almacenar los resultados de las correlaciones AOD
 correlation_results = []
 
-# Process each station
-for station in stations:
-    # Construct file path
-    filepath = os.path.join(data_dir, station)
+# Procesar cada archivo
+for file in files:
+    filepath = os.path.join(data_dir, file)
     
     try:
-        # Load data
+        # Cargar datos
         data = pd.read_csv(filepath)
 
-        # Convert 'Fecha' to datetime and set as index
+        # Convertir 'Fecha' a datetime y usarla como índice
         data['Fecha'] = pd.to_datetime(data['Fecha'])
         data.set_index('Fecha', inplace=True)
 
         # Eliminar columnas específicas solo si existen
-        if 'SanAntonio' in station:
+        if 'SanAntonio' in file:
             data = data.drop(columns=['CO', 'NO2'], errors='ignore')
-        elif 'Tumbaco' in station:
+        elif 'Tumbaco' in file:
             data = data.drop(columns=['SO2'], errors='ignore')
 
-        # Filter based on ranges
+        # Reemplazar NaN en la columna AOD por 0
+        data['AOD'] = data['AOD'].fillna(0)
+
+        # Eliminar filas con NaN en las demás columnas
+        data = data.dropna()
+
+        # Filtrar según los rangos
         for column, (min_val, max_val) in ranges.items():
             if column in data.columns:
                 data = data[(data[column] >= min_val) & (data[column] <= max_val)]
 
-        # Realización de histogramas para las columnas en ranges antes de eliminar los outliers
-        # for column in ranges.keys():
-        #     if column in data.columns:
-        #         plt.figure(figsize=(8, 6))
-        #         sns.histplot(data[column], bins=30, kde=True, color='blue', alpha=0.7)
-        #         plt.title(f'Histograma de {column} - {station}')
-        #         plt.xlabel(column)
-        #         plt.ylabel('Frecuencia')
-        #         plt.show()
-
-        # Remove outliers using Z-score
+        # Eliminar outliers utilizando Z-score
         z_scores = np.abs(zscore(data.select_dtypes(include=[np.number])))
         data = data[(z_scores < 3).all(axis=1)]
 
         # Determinar las operaciones según la estación
-        if 'SanAntonio' in station:
+        if 'SanAntonio' in file:
             operations = san_antonio_operations
-        elif 'Tumbaco' in station:
+        elif 'Tumbaco' in file:
             operations = tumbaco_operations
         else:
             operations = default_operations
 
-        # Resample data annually
+        # Resampling anual con la operación mean
         data_resampled = data.resample('A').agg(operations)
 
-        # Calculate Pearson correlation
+        # Calcular la correlación de Pearson para los datos anuales
         correlation = data_resampled.corr(method='pearson')
 
-        # Extract AOD correlations
+        # Extraer las correlaciones de AOD
         if 'AOD' in correlation.columns:
             aod_correlation = correlation['AOD'].drop('AOD', errors='ignore')
-            correlation_results.append(aod_correlation.rename(station.replace(".csv", "")))
+            correlation_results.append(aod_correlation.rename(file.replace(".csv", "")))
 
     except FileNotFoundError:
-        print(f"File not found: {station}")
+        print(f"File not found: {file}")
     except Exception as e:
-        print(f"Error processing {station}: {e}")
+        print(f"Error processing {file}: {e}")
 
-# Combine all AOD correlations into a single DataFrame
+# Combinar todas las correlaciones AOD en un solo DataFrame
 if correlation_results:
     aod_correlation_table = pd.concat(correlation_results, axis=1)
-
-    # Save the results to a CSV in the specified path with the added description
+    
+    # Guardar los resultados en un archivo CSV en el directorio de resultados
     output_path = r'C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Resultados_correlaciones\AOD_Correlations_Mean_Annual.csv'
     aod_correlation_table.to_csv(output_path)
 
-    # Display the combined correlation table
+    # Mostrar la tabla combinada de correlaciones
     print(aod_correlation_table)
 else:
     print("No se encontraron correlaciones de AOD para procesar.")

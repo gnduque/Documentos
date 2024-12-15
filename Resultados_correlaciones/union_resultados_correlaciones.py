@@ -1,56 +1,38 @@
 import pandas as pd
 import os
 
-# Ruta base
-base_path = r"C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Resultados_correlaciones"
+# Ruta base del directorio
+base_dir = "C:/Users/gisse/OneDrive/Escritorio/Repositorio/Documentos/Resultados_correlaciones/"
 
-# Lista de nombres de archivos
-file_names = [
-    "AOD_Correlations_Weekly_Mean_NoZeroAOD.csv",
-    "AOD_Correlations_Periods_Mean.csv",
-    "AOD_Correlations_Periods_Mean_NoZeroAOD.csv",
-    "AOD_Correlations_Monthly_Mean_NoZeroAOD.csv",
-    "AOD_Correlations_Mean_Weekly.csv",
-    "AOD_Correlations_Mean_Monthly.csv",
-    "AOD_Correlations_Mean_Annual.csv",
-    "AOD_Correlations_Max_Weekly.csv",
-    "AOD_Correlations_Max_Seasonal.csv",
-    "AOD_Correlations_Max_Monthly.csv",
-    "AOD_Correlations_Max_Annual.csv",
-    "AOD_Correlations_Annual_Mean_NoZeroAOD.csv"
+# Lista de nombres de archivos y sus categorías
+file_info = [
+    ("AOD_Correlations_Max_Annual.csv", "Max", "Annual"),
+    ("AOD_Correlations_Max_Monthly.csv", "Max", "Monthly"),
+    ("AOD_Correlations_Max_Seasonal.csv", "Max", "Seasonal"),
+    ("AOD_Correlations_Max_Weekly.csv", "Max", "Weekly"),
+    ("AOD_Correlations_Mean_Annual_NoZeroAOD.csv", "Mean", "Annual_NoZeroAOD"),
+    ("AOD_Correlations_Mean_Annual.csv", "Mean", "Annual"),
+    ("AOD_Correlations_Mean_Monthly__NoZeroAOD.csv", "Mean", "Monthly_NoZeroAOD"),
+    ("AOD_Correlations_Mean_Monthly.csv", "Mean", "Monthly"),
+    ("AOD_Correlations_Mean_Seasonal_NoZeroAOD.csv", "Mean", "Seasonal_NoZeroAOD"),
+    ("AOD_Correlations_Mean_Seasonal.csv", "Mean", "Seasonal"),
+    ("AOD_Correlations_Mean_Weekly__NoZeroAOD.csv", "Mean", "Weekly_NoZeroAOD"),
+    ("AOD_Correlations_Mean_Weekly.csv", "Mean", "Weekly")
 ]
 
-# DataFrame vacío para combinar los resultados
-combined_df = pd.DataFrame()
+# Leer y concatenar todos los archivos CSV con columnas adicionales para categoría y tipo
+df_list = []
+for file_name, category, period in file_info:
+    file_path = os.path.join(base_dir, file_name)
+    df = pd.read_csv(file_path)
+    df['Category'] = category
+    df['Period'] = period
+    df_list.append(df)
 
-# Iterar sobre cada archivo
-for file_name in file_names:
-    # Construir la ruta completa
-    file_path = os.path.join(base_path, file_name)
+combined_df = pd.concat(df_list)
 
-    # Leer archivo
-    df = pd.read_csv(file_path, index_col=0)
+# Guardar el dataframe combinado en un nuevo archivo CSV
+output_path = os.path.join(base_dir, "Correlations_AOD.csv")
+combined_df.to_csv(output_path, index=False)
 
-    # Extraer información del nombre del archivo
-    method = "mean" if "Mean" in file_name else "max"
-    frequency = (
-        "weekly" if "Weekly" in file_name else
-        "monthly" if "Monthly" in file_name else
-        "annual" if "Annual" in file_name else
-        "seasonal"
-    )
-    aod_filter = "NoZeroAOD" if "NoZeroAOD" in file_name else "AllAOD"
-
-    # Añadir columnas de metadata
-    df["Method"] = method
-    df["Frequency"] = frequency
-    df["AOD_Filter"] = aod_filter
-
-    # Añadir al DataFrame combinado
-    combined_df = pd.concat([combined_df, df])
-
-# Guardar el archivo combinado
-output_path = os.path.join(base_path, "Combined_AOD_Correlations.csv")
-combined_df.to_csv(output_path)
-
-print(f"Archivo combinado guardado en: {output_path}")
+print(f"Todos los archivos de correlaciones se han combinado y guardado en {output_path} con las categorías correspondientes.")

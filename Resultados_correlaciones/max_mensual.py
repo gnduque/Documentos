@@ -16,17 +16,17 @@ data_dir = r'C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Datos_loc
 # Rango de valores para las columnas
 ranges = {
     'NO2': (0, 100),
-    'O3': (0, 85),
+    'O3': (0, 105),
     'PM25': (0, 300),
     'PRE': (200, 780),
-    'RS': (0, 1100),
+    'RS': (0, 1350),
     'SO2': (0, 200),
     'TMP': (7, 28),
     'VEL': (0, 8),
-    'CO': (0, 4),
+    'CO': (0, 20),
     'DIR': (0, 360),
-    'HUM': (60, 90),
-    'LLU': (0, 70)
+    'HUM': (60, 100),
+    'LLU': (0, 85)
 }
 
 # Operaciones para obtener el máximo
@@ -47,7 +47,7 @@ default_operations = {
 }
 
 san_antonio_operations = default_operations.copy()
-for col in ['CO', 'NO2']:
+for col in ['CO', 'NO2','SO2']:
     san_antonio_operations.pop(col, None)
 
 tumbaco_operations = default_operations.copy()
@@ -100,7 +100,7 @@ for file in files:
         # Resampling mensual con la operación max
         data_resampled = data.resample('M').agg(operations)
 
-        # Calcular la correlación de Pearson
+        # Calcular la correlación de Pearson para los datos mensuales
         correlation = data_resampled.corr(method='pearson')
 
         # Extraer las correlaciones de AOD

@@ -1,34 +1,35 @@
 import pandas as pd
 import numpy as np
 import os
+from scipy.stats import zscore
 
-# Path to the data directory
-data_dir = r'C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Datos_locales_estaciones\Datosproceso_3'
-
-# List of files to process
-stations = [
-    "modified_Carapungo.csv", "modified_SanAntonio.csv", "modified_Tumbaco.csv",
-    "modified_Guamani.csv", "modified_Cotocollao.csv", "modified_Belisario.csv",
-    "modified_Centro.csv", "modified_LosChillos.csv", "modified_ElCamal.csv"
+# Lista de archivos a procesar
+files = [
+    "Belisario.csv", "Carapungo.csv", "Centro.csv", 
+    "Cotocollao.csv", "ElCamal.csv", "Guamani.csv", 
+    "LosChillos.csv", "SanAntonio.csv", "Tumbaco.csv"
 ]
 
-# Updated ranges
+# Directorio donde se encuentran los archivos
+data_dir = r'C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Datos_locales_estaciones\Datosproceso_3'
+
+# Rango de valores para las columnas
 ranges = {
     'NO2': (0, 100),
-    'O3': (0, 85),
+    'O3': (0, 105),
     'PM25': (0, 300),
     'PRE': (200, 780),
-    'RS': (0, 1100),
+    'RS': (0, 1350),
     'SO2': (0, 200),
     'TMP': (7, 28),
     'VEL': (0, 8),
-    'CO': (0, 4),
+    'CO': (0, 20),
     'DIR': (0, 360),
-    'HUM': (60, 90),
-    'LLU': (0, 70)
+    'HUM': (60, 100),
+    'LLU': (0, 85)
 }
 
-# Operations with 'mean' instead of 'median'
+# Operaciones para obtener el promedio
 default_operations = {
     'NO2': 'mean',
     'O3': 'mean',
@@ -46,91 +47,101 @@ default_operations = {
 }
 
 san_antonio_operations = default_operations.copy()
-for col in ['CO', 'NO2']:
+for col in ['CO', 'NO2','SO2']:
     san_antonio_operations.pop(col, None)
 
 tumbaco_operations = default_operations.copy()
 tumbaco_operations.pop('SO2', None)
 
-# Period definitions (4 periods within a year)
+# Periodos estacionales
 periods = [('11-16', '02-15'), ('02-16', '05-15'), ('05-16', '08-15'), ('08-16', '11-15')]
 period_labels = ['16Nov-15Feb', '16Feb-15May', '16May-15Aug', '16Aug-15Nov']
 
-# Prepare a list to hold the period data for each station
+# Lista para almacenar los resultados de las correlaciones AOD
 correlation_results = []
 
-# Process each station
-for station in stations:
-    # Construct file path
-    filepath = os.path.join(data_dir, station)
+# Procesar cada archivo
+for file in files:
+    filepath = os.path.join(data_dir, file)
     
     try:
-        # Load data
+        # Cargar datos
         data = pd.read_csv(filepath)
 
-        # Convert 'Fecha' to datetime and set as index
+        # Convertir 'Fecha' a datetime y usarla como índice
         data['Fecha'] = pd.to_datetime(data['Fecha'])
         data.set_index('Fecha', inplace=True)
 
         # Eliminar columnas específicas solo si existen
-        if 'SanAntonio' in station:
+        if 'SanAntonio' in file:
             data = data.drop(columns=['CO', 'NO2'], errors='ignore')
-            operations = san_antonio_operations
-        elif 'Tumbaco' in station:
+        elif 'Tumbaco' in file:
             data = data.drop(columns=['SO2'], errors='ignore')
-            operations = tumbaco_operations
-        else:
-            operations = default_operations
 
-        # Filter based on ranges
+        # Reemplazar NaN en la columna AOD por 0
+        data['AOD'] = data['AOD'].fillna(0)
+
+        # Eliminar filas con NaN en las demás columnas
+        data = data.dropna()
+
+        # Filtrar según los rangos
         for column, (min_val, max_val) in ranges.items():
             if column in data.columns:
                 data = data[(data[column] >= min_val) & (data[column] <= max_val)]
 
-        # Eliminar filas donde AOD == 0
-        if 'AOD' in data.columns:
-            data = data[data['AOD'] != 0]
+        # Eliminar outliers utilizando Z-score
+        z_scores = np.abs(zscore(data.select_dtypes(include=[np.number])))
+        data = data[(z_scores < 3 ).all(axis=1)]
 
-        # Lista para guardar los DataFrames de cada periodo
+        # Determinar las operaciones según la estación
+        if 'SanAntonio' in file:
+            operations = san_antonio_operations
+        elif 'Tumbaco' in file:
+            operations = tumbaco_operations
+        else:
+            operations = default_operations
+
+        # Procesar los periodos estacionales
         data_frames = []
-
-        # Iterar sobre cada año desde 2004 hasta 2024
-        for year in range(2004, 2025):
+        for year in range(2004, 2025):  # desde 2004 hasta 2024
             for (start_suffix, end_suffix), label in zip(periods, period_labels):
                 start = f"{year}-{start_suffix}"
                 end = f"{year}-{end_suffix}" if start_suffix < end_suffix else f"{year+1}-{end_suffix}"
                 period_range = data[start:end]
                 if not period_range.empty:
-                    # Realizamos el re-muestreo según las operaciones definidas
+                    # Remuestrear los datos para el periodo con la operación mean
                     period_data = period_range.agg(operations)
                     period_data.name = f"{label} {year}"
                     data_frames.append(period_data.to_frame().transpose())
 
-        # Concatenamos todos los DataFrames en uno solo
-        station_data = pd.concat(data_frames)
+                # Eliminate rows where AOD == 0
+        if 'AOD' in data.columns:
+            data = data[data['AOD'] != 0]
+        # Concatenar los DataFrames de todos los periodos estacionales
+        data_seasonal = pd.concat(data_frames)
 
-        # Calculate Pearson correlation for each period
-        correlation = station_data.corr(method='pearson')
+        # Calcular la correlación de Pearson para los datos estacionales
+        correlation = data_seasonal.corr(method='pearson')
 
-        # Extract AOD correlations and append to results
+        # Extraer las correlaciones de AOD
         if 'AOD' in correlation.columns:
             aod_correlation = correlation['AOD'].drop('AOD', errors='ignore')
-            correlation_results.append(aod_correlation.rename(station.replace(".csv", "")))
+            correlation_results.append(aod_correlation.rename(file.replace(".csv", "")))
 
     except FileNotFoundError:
-        print(f"File not found: {station}")
+        print(f"File not found: {file}")
     except Exception as e:
-        print(f"Error processing {station}: {e}")
+        print(f"Error processing {file}: {e}")
 
-# Combine all AOD correlations into a single DataFrame
+# Combinar todas las correlaciones AOD en un solo DataFrame
 if correlation_results:
     aod_correlation_table = pd.concat(correlation_results, axis=1)
-
-    # Save the results to a CSV in the specified path with the added description
-    output_path = r'C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Resultados_correlaciones\AOD_Correlations_Periods_Mean_NoZeroAOD.csv'
+    
+    # Guardar los resultados en un archivo CSV en el directorio de resultados
+    output_path = r'C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Resultados_correlaciones\AOD_Correlations_Mean_Seasonal_NoZeroAOD.csv'
     aod_correlation_table.to_csv(output_path)
 
-    # Display the combined correlation table
+    # Mostrar la tabla combinada de correlaciones
     print(aod_correlation_table)
 else:
     print("No se encontraron correlaciones de AOD para procesar.")

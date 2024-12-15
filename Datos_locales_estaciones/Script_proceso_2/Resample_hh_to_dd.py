@@ -8,15 +8,18 @@ Created on Wed Mar 27 23:44:14 2024
 import pandas as pd
 from tqdm import tqdm
 
-
 localidades = ["Belisario","Carapungo", "Centro", "Cotocollao", "ElCamal", "Guamani", "LosChillos", "SanAntonio", "Tumbaco"]
 
 for localidad in tqdm(localidades, desc="Procesando localidades"):
-    archivo = rf"C:\Users\ADMIN\Desktop\Documentos\Datos_locales_estaciones\Datos_proceso_1\{localidad}.xlsx"
+    archivo = rf"C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Datos_locales_estaciones\Datos_proceso_1\{localidad}.xlsx"
     df = pd.read_excel(archivo, header=0, skiprows=[1])
     df['Fecha'] = pd.to_datetime(df['Fecha'])
     df['Fecha'] = df['Fecha'].apply(lambda fecha: fecha.replace(minute=0, second=0))
     df.set_index('Fecha', inplace=True)
+
+    # Convertir columnas a tipo numérico
+    for col in df.columns:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
 
     # Diccionario de operaciones predeterminadas
     operaciones = {
@@ -40,5 +43,5 @@ for localidad in tqdm(localidades, desc="Procesando localidades"):
     # Resample y procesamiento de los datos
     df_resampled = df.resample('D').agg(operaciones)
 
-    nueva_ruta = rf"C:\Users\ADMIN\Desktop\Documentos\Datos_locales_estaciones\Datos_proceso_2\diarios_{localidad}.csv"
+    nueva_ruta = rf"C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Datos_locales_estaciones\Datos_proceso_2\diarios_{localidad}.csv"
     df_resampled.to_csv(nueva_ruta, index=True)

@@ -6,27 +6,29 @@ Created on Sun Apr  7 22:03:47 2024
 """
 
 import pandas as pd
+from tqdm import tqdm
+
+# Lista de estaciones
+estaciones = ["Belisario", "Carapungo", "Centro", "Cotocollao", "ElCamal", "Guamani", "LosChillos", "SanAntonio", "Tumbaco"]
 
 # Define file paths
-input_file1 = "C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Descarga_AOD_GEE_MODIS\AOD_pixel_values.csv"
-input_file2 = "C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Datos_locales_estaciones\Datos_proceso_2\diarios_max_ElCamal.csv"
-output_file = "C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Datos_locales_estaciones\Datos_proceso_3\ElCamal.csv"
+input_file1 = r"C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Descarga_AOD_GEE_MODIS\AOD_values.csv"
 
-# Read the first CSV file and select the 'ElCamal' column
-# For tqdm, we'll add it in the final version to track progress
-df1 = pd.read_csv(input_file1, usecols=['ElCamal'])
+for estacion in tqdm(estaciones, desc="Procesando estaciones"):
+    input_file2 = rf"C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Datos_locales_estaciones\Datos_proceso_2\diarios_{estacion}.csv"
+    output_file = rf"C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Datos_locales_estaciones\Datosproceso_3\{estacion}.csv"
 
-# Read the second CSV file
-df2 = pd.read_csv(input_file2)
+    # Read the first CSV file and select the column for the current station
+    df1 = pd.read_csv(input_file1, usecols=[estacion])
 
-# Rename the column 'ElCamal' to 'AOD'
-df1.rename(columns={'ElCamal': 'AOD'}, inplace=True)
+    # Read the second CSV file
+    df2 = pd.read_csv(input_file2)
 
-# Append the 'AOD' column to the second dataframe
-df2 = pd.concat([df2, df1], axis=1)
+    # Rename the column to 'AOD'
+    df1.rename(columns={estacion: 'AOD'}, inplace=True)
 
-# Save the result to a new CSV file
-# Here too, tqdm will be added in the final version
-df2.to_csv(output_file, index=False)
+    # Append the 'AOD' column to the second dataframe
+    df2 = pd.concat([df2, df1], axis=1)
 
-
+    # Save the result to a new CSV file
+    df2.to_csv(output_file, index=False)
