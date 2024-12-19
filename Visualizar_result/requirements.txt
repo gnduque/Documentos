@@ -1,2 +1,4 @@
-earthengine-api
-geemap
+voila
+pandas
+matplotlib
+numpy
