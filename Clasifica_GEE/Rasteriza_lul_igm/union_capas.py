@@ -3,7 +3,7 @@ import pandas as pd  # Se agrega esta línea para importar pandas
 
 # Cargar los shapefiles
 shp1_path = r"C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Clasifica_GEE\Rasteriza_lul_igm\vacio_raster.shp"
-shp2_path = r"C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Clasifica_GEE\Rasteriza_lul_igm\lulc_comparar_corregido.shp"
+shp2_path = r"Clasifica_GEE/Rasteriza_lul_igm/lulc_igm__actualizado.shp"
 
 shp1 = gpd.read_file(shp1_path)
 shp2 = gpd.read_file(shp2_path)

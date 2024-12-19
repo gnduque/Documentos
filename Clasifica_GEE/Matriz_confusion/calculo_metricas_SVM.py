@@ -5,8 +5,8 @@ import csv
 from rasterio.warp import calculate_default_transform, reproject, Resampling
 
 # Paths de los archivos raster
-raster_real_path = r"C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Clasifica_GEE\Rasteriza_lul_igm\rasterizado_lulc_igm.tif"
-raster_pred_path = r"C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Clasifica_GEE\Clasifica_RF_CART_SVM\Raster_Results\LULC_2009_2015_SVM_32717.tif"
+raster_real_path = r"C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Clasifica_GEE\Rasteriza_lul_igm\rasterizado_lulc_igm_actual.tif"
+raster_pred_path = r"C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Clasifica_GEE\Clasifica_RF_CART_SVM\Raster_Results\LULC_2009_2015_SVM.tif"
 output_dir = r"C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Clasifica_GEE\Matriz_confusion"
 
 # Cambiar la proyección de un raster
