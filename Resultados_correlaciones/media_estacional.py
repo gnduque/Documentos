@@ -1,144 +1,74 @@
 import pandas as pd
-import numpy as np
-import os
-from scipy.stats import zscore
 
-# Lista de archivos a procesar
-files = [
-    "Belisario.csv", "Carapungo.csv", "Centro.csv", 
-    "Cotocollao.csv", "ElCamal.csv", "Guamani.csv", 
-    "LosChillos.csv", "SanAntonio.csv", "Tumbaco.csv"
-]
+# Define el rango de fechas
+inicio_fecha = '2019-01-01'
+fin_fecha = '2022-01-01'
 
-# Directorio donde se encuentran los archivos
-data_dir = r'C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Datos_locales_estaciones\Datosproceso_3'
-
-# Rango de valores para las columnas
-ranges = {
-    'NO2': (0, 100),
-    'O3': (0, 105),
-    'PM25': (0, 300),
-    'PRE': (200, 780),
-    'RS': (0, 1350),
-    'SO2': (0, 200),
-    'TMP': (7, 28),
-    'VEL': (0, 8),
-    'CO': (0, 20),
-    'DIR': (0, 360),
-    'HUM': (60, 100),
-    'LLU': (0, 85)
+# Lista de archivos (asegúrate de definir las rutas adecuadamente)
+archivos = {
+    'Belisario': 'C:/Users/gisse/OneDrive/Escritorio/Repositorio/Documentos/Datos_locales_estaciones/Datosproceso_3/resample/Belisario_Resample_Estacional.csv',
+    'Carapungo': 'C:/Users/gisse/OneDrive/Escritorio/Repositorio/Documentos/Datos_locales_estaciones/Datosproceso_3/resample/Carapungo_Resample_Estacional.csv',
+    'Centro': 'C:/Users/gisse/OneDrive/Escritorio/Repositorio/Documentos/Datos_locales_estaciones/Datosproceso_3/resample/Centro_Resample_Estacional.csv',
+    'Cotocollao': 'C:/Users/gisse/OneDrive/Escritorio/Repositorio/Documentos/Datos_locales_estaciones/Datosproceso_3/resample/Cotocollao_Resample_Estacional.csv',
+    'ElCamal': 'C:/Users/gisse/OneDrive/Escritorio/Repositorio/Documentos/Datos_locales_estaciones/Datosproceso_3/resample/ElCamal_Resample_Estacional.csv',
+    'Guamani': 'C:/Users/gisse/OneDrive/Escritorio/Repositorio/Documentos/Datos_locales_estaciones/Datosproceso_3/resample/Guamani_Resample_Estacional.csv',
+    'LosChillos': 'C:/Users/gisse/OneDrive/Escritorio/Repositorio/Documentos/Datos_locales_estaciones/Datosproceso_3/resample/LosChillos_Resample_Estacional.csv',
+    'SanAntonio': 'C:/Users/gisse/OneDrive/Escritorio/Repositorio/Documentos/Datos_locales_estaciones/Datosproceso_3/resample/SanAntonio_Resample_Estacional.csv',
+    'Tumbaco': 'C:/Users/gisse/OneDrive/Escritorio/Repositorio/Documentos/Datos_locales_estaciones/Datosproceso_3/resample/Tumbaco_Resample_Estacional.csv'
 }
 
-# Operaciones para obtener el promedio
-default_operations = {
-    'NO2': 'mean',
-    'O3': 'mean',
-    'PM25': 'mean',
-    'PRE': 'mean',
-    'RS': 'mean',
-    'SO2': 'mean',
-    'TMP': 'mean',
-    'VEL': 'mean',
-    'CO': 'mean',
-    'DIR': 'mean',
-    'HUM': 'mean',
-    'LLU': 'mean',
-    'AOD': 'mean'
-}
-
-san_antonio_operations = default_operations.copy()
-for col in ['CO', 'NO2','SO2']:
-    san_antonio_operations.pop(col, None)
-
-tumbaco_operations = default_operations.copy()
-tumbaco_operations.pop('SO2', None)
-
-# Periodos estacionales
-periods = [('11-16', '02-15'), ('02-16', '05-15'), ('05-16', '08-15'), ('08-16', '11-15')]
-period_labels = ['16Nov-15Feb', '16Feb-15May', '16May-15Aug', '16Aug-15Nov']
-
-# Lista para almacenar los resultados de las correlaciones AOD
-correlation_results = []
-
-# Procesar cada archivo
-for file in files:
-    filepath = os.path.join(data_dir, file)
+# Filtrar los datos de las estaciones por el rango de fechas
+def filtrar_por_fecha(df):
+    # Convertir la columna 'Fecha' a tipo datetime si no lo está
+    df['Fecha'] = pd.to_datetime(df['Fecha'])
     
-    try:
-        # Cargar datos
-        data = pd.read_csv(filepath)
-
-        # Convertir 'Fecha' a datetime y usarla como índice
-        data['Fecha'] = pd.to_datetime(data['Fecha'])
-        data.set_index('Fecha', inplace=True)
-
-        # Eliminar columnas específicas solo si existen
-        if 'SanAntonio' in file:
-            data = data.drop(columns=['CO', 'NO2'], errors='ignore')
-        elif 'Tumbaco' in file:
-            data = data.drop(columns=['SO2'], errors='ignore')
-
-        # Reemplazar NaN en la columna AOD por 0
-        data['AOD'] = data['AOD'].fillna(0)
-
-        # Eliminar filas con NaN en las demás columnas
-        data = data.dropna()
-
-        # Filtrar según los rangos
-        for column, (min_val, max_val) in ranges.items():
-            if column in data.columns:
-                data = data[(data[column] >= min_val) & (data[column] <= max_val)]
-
-        # Eliminar outliers utilizando Z-score
-        z_scores = np.abs(zscore(data.select_dtypes(include=[np.number])))
-        data = data[(z_scores < 3).all(axis=1)]
-
-        # Determinar las operaciones según la estación
-        if 'SanAntonio' in file:
-            operations = san_antonio_operations
-        elif 'Tumbaco' in file:
-            operations = tumbaco_operations
-        else:
-            operations = default_operations
-
-        # Procesar los periodos estacionales
-        data_frames = []
-        for year in range(2004, 2025):  # desde 2004 hasta 2024
-            for (start_suffix, end_suffix), label in zip(periods, period_labels):
-                start = f"{year}-{start_suffix}"
-                end = f"{year}-{end_suffix}" if start_suffix < end_suffix else f"{year+1}-{end_suffix}"
-                period_range = data[start:end]
-                if not period_range.empty:
-                    # Remuestrear los datos para el periodo con la operación mean
-                    period_data = period_range.agg(operations)
-                    period_data.name = f"{label} {year}"
-                    data_frames.append(period_data.to_frame().transpose())
-
-        # Concatenar los DataFrames de todos los periodos estacionales
-        data_seasonal = pd.concat(data_frames)
-
-        # Calcular la correlación de Pearson para los datos estacionales
-        correlation = data_seasonal.corr(method='pearson')
-
-        # Extraer las correlaciones de AOD
-        if 'AOD' in correlation.columns:
-            aod_correlation = correlation['AOD'].drop('AOD', errors='ignore')
-            correlation_results.append(aod_correlation.rename(file.replace(".csv", "")))
-
-    except FileNotFoundError:
-        print(f"File not found: {file}")
-    except Exception as e:
-        print(f"Error processing {file}: {e}")
-
-# Combinar todas las correlaciones AOD en un solo DataFrame
-if correlation_results:
-    aod_correlation_table = pd.concat(correlation_results, axis=1)
+    # Filtrar por el rango de fechas
+    df_filtrado = df[(df['Fecha'] >= inicio_fecha) & (df['Fecha'] <= fin_fecha)]
     
-    # Guardar los resultados en un archivo CSV en el directorio de resultados
-    output_path = r'C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Resultados_correlaciones\AOD_Correlations_Mean_Seasonal.csv'
-    aod_correlation_table.to_csv(output_path)
+    # Convertir todas las columnas numéricas a tipo numérico, forzando errores a NaN
+    df_filtrado = df_filtrado.apply(pd.to_numeric, errors='coerce')
+    
+    # Excluir valores de AOD mayores a 
+    #df_filtrado = df_filtrado[df_filtrado['AOD'] <= 400]
 
-    # Mostrar la tabla combinada de correlaciones
-    print(aod_correlation_table)
-else:
-    print("No se encontraron correlaciones de AOD para procesar.")
+    return df_filtrado
+
+# Cargar y filtrar los datos de todas las estaciones
+archivos_filtrados = {estacion: filtrar_por_fecha(pd.read_csv(path)) for estacion, path in archivos.items()}
+
+# Función para calcular las correlaciones entre columnas
+def calcular_correlaciones(archivos_filtrados):
+    resultados_correlaciones = {}
+    
+    columnas_correlacion = ['NO2', 'O3', 'PM25', 'PRE', 'RS', 'SO2', 'TMP', 'VEL', 'CO', 'DIR', 'HUM', 'LLU', 'AOD']
+    
+    for estacion, df in archivos_filtrados.items():
+        # Verificar qué columnas están disponibles en cada estación
+        columnas_disponibles = [col for col in columnas_correlacion if col in df.columns]
+        
+        # Filtrar el DataFrame solo con las columnas disponibles
+        df_filtrado = df[columnas_disponibles]
+        
+        # Calcular la correlación con la columna 'AOD'
+        correlaciones = df_filtrado.corr()['AOD'].drop('AOD', errors='ignore')  # Excluye 'AOD' de su propia correlación
+        
+        # Almacenar las correlaciones en el diccionario de resultados
+        resultados_correlaciones[estacion] = correlaciones
+    
+    # Convertir el diccionario en un DataFrame para mejor presentación
+    df_resultados = pd.DataFrame(resultados_correlaciones)
+    
+    return df_resultados
+
+# Calcular las correlaciones
+resultados_correlaciones = calcular_correlaciones(archivos_filtrados)
+
+# Mostrar resultados
+print(resultados_correlaciones)
+
+# Guardar los resultados en un archivo CSV
+ruta_guardado = 'C:/Users/gisse/OneDrive/Escritorio/Repositorio/Documentos/Resultados_correlaciones/correlaciones_Estacional.csv'
+resultados_correlaciones.to_csv(ruta_guardado)
+
+# Confirmar que los resultados se han guardado
+print(f"Los resultados se han guardado en: {ruta_guardado}")

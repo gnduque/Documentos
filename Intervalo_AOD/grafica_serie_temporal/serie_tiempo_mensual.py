@@ -28,6 +28,11 @@ def load_clean_and_resample(filepath, date_range, variables_to_keep, value_repla
     # Resampleo mensual: PM25 y AOD con promedio
     data.set_index('Fecha', inplace=True)
     resampled_data = data.resample('M').agg({'AOD': 'mean', 'PM25': 'mean'}).reset_index()
+
+    # Normalización Min-Max para PM25 y AOD
+    resampled_data['PM25_normalized'] = (resampled_data['PM25'] - resampled_data['PM25'].min()) / (resampled_data['PM25'].max() - resampled_data['PM25'].min())
+    resampled_data['AOD_normalized'] = (resampled_data['AOD'] - resampled_data['AOD'].min()) / (resampled_data['AOD'].max() - resampled_data['AOD'].min())
+    
     return resampled_data
 
 # Parámetros
@@ -60,13 +65,13 @@ for i, filepath in enumerate(filepaths):
         ax1 = axes[i]
         ax2 = ax1.twinx()  # Crear el segundo eje y para AOD
         
-        # Graficar PM25 (promedio) en el eje y izquierdo
-        ax1.plot(data['Fecha'], data['PM25'], color='green', label='PM25 (Media)', linestyle='-', linewidth=1)
+        # Graficar PM25 normalizado (promedio) en el eje y izquierdo
+        ax1.plot(data['Fecha'], data['PM25_normalized'], color='green', label='PM25 (Normalizado)', linestyle='-', linewidth=1)
         ax1.set_ylabel("PM25", fontsize=8, labelpad=2, color='green')
         ax1.tick_params(axis='y', labelsize=8, labelcolor='green')
 
-        # Graficar AOD (media) en el eje y derecho
-        ax2.plot(data['Fecha'], data['AOD'], color='blue', label='AOD (Media)', linestyle='-', linewidth=1)
+        # Graficar AOD normalizado (media) en el eje y derecho
+        ax2.plot(data['Fecha'], data['AOD_normalized'], color='blue', label='AOD (Normalizado)', linestyle='-', linewidth=1)
         ax2.set_ylabel("AOD", fontsize=8, labelpad=2, color='blue')
         ax2.tick_params(axis='y', labelsize=8, labelcolor='blue')
         

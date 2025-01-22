@@ -1,4 +1,0 @@
-voila
-pandas
-matplotlib
-numpy

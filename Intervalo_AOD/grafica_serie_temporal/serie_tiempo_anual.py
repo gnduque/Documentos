@@ -1,11 +1,4 @@
-import pandas as pd
-import numpy as np
-import os
-import matplotlib.pyplot as plt
-import seaborn as sns
-from scipy.stats import zscore
-
-# Función para cargar, limpiar y resamplear los datos
+# Función para cargar, limpiar y resamplear los datos (agregada la normalización)
 def load_clean_and_resample(filepath, date_range, variables_to_keep, value_replacement, ranges):
     if not os.path.exists(filepath):
         print(f"Error: El archivo {filepath} no existe.")
@@ -29,6 +22,11 @@ def load_clean_and_resample(filepath, date_range, variables_to_keep, value_repla
     # Resampleo anual: PM25 y AOD con promedio
     data.set_index('Fecha', inplace=True)
     resampled_data = data.resample('A').agg({'AOD': 'mean', 'PM25': 'mean'}).reset_index()
+
+    # Normalización de PM25 y AOD (min-max)
+    resampled_data['PM25_norm'] = (resampled_data['PM25'] - resampled_data['PM25'].min()) / (resampled_data['PM25'].max() - resampled_data['PM25'].min())
+    resampled_data['AOD_norm'] = (resampled_data['AOD'] - resampled_data['AOD'].min()) / (resampled_data['AOD'].max() - resampled_data['AOD'].min())
+
     return resampled_data
 
 # Parámetros
@@ -46,7 +44,7 @@ filepaths = [
 date_range = ("2016-02-08", "2024-02-13")
 variables_to_keep = ['Fecha', 'AOD', 'PM25']
 value_replacement = 0
-ranges = {'PM25': (0, 300)}  # Filtro antes del resampleo
+ranges = {'PM25': (0, 1200)}  # Filtro antes del resampleo
 
 # Crear la figura y los subgráficos
 fig, axes = plt.subplots(3, 3, figsize=(9, 9))  # Tamaño más pequeño para gráficos compactos
@@ -61,14 +59,14 @@ for i, filepath in enumerate(filepaths):
         ax1 = axes[i]
         ax2 = ax1.twinx()  # Crear el segundo eje y para AOD
         
-        # Graficar PM25 (promedio) en el eje y izquierdo
-        ax1.plot(data['Fecha'], data['PM25'], color='green', label='PM25 (Media)', linestyle='-', marker='x', markersize=5)
-        ax1.set_ylabel("PM25", fontsize=8, labelpad=2, color='green')
+        # Graficar PM25 normalizado (promedio) en el eje y izquierdo
+        ax1.plot(data['Fecha'], data['PM25_norm'], color='green', label='PM25 (Normalizado)', linestyle='-', marker='x', markersize=5)
+        ax1.set_ylabel("PM25 (Normalizado)", fontsize=8, labelpad=2, color='green')
         ax1.tick_params(axis='y', labelsize=8, labelcolor='green')
 
-        # Graficar AOD (media) en el eje y derecho
-        ax2.plot(data['Fecha'], data['AOD'], color='blue', label='AOD (Media)', linestyle='-', marker='o', markersize=5)
-        ax2.set_ylabel("AOD", fontsize=8, labelpad=2, color='blue')
+        # Graficar AOD normalizado (media) en el eje y derecho
+        ax2.plot(data['Fecha'], data['AOD_norm'], color='blue', label='AOD (Normalizado)', linestyle='-', marker='o', markersize=5)
+        ax2.set_ylabel("AOD (Normalizado)", fontsize=8, labelpad=2, color='blue')
         ax2.tick_params(axis='y', labelsize=8, labelcolor='blue')
         
         # Ajustar los valores del eje X (años)

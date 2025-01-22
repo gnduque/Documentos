@@ -6,7 +6,7 @@ import geemap
 ee.Initialize(project='modern-renderer-413302')
 
 # Cargar datos de Earth Engine
-dataset = ee.Image("projects/modern-renderer-413302/assets/LULC_2009_2015_i").reproject(crs='EPSG:4326', scale=30)
+dataset = ee.Image("projects/modern-renderer-413302/assets/LULC_2009_2015_R").reproject(crs='EPSG:4326', scale=30)
 
 # Parámetros de visualización para la capa de Earth Engine
 vis_params = {
@@ -19,25 +19,27 @@ vis_params = {
 mapa = folium.Map(location=[-0.229, -78.52], zoom_start=12, control_scale=True)
 
 # Añadir una capa de visualización de Google Satélite
-folium.TileLayer(
+google_satellite = folium.TileLayer(
     tiles='https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
     attr='Google',
     name='Google Satellite',
     subdomains=['mt0', 'mt1', 'mt2', 'mt3'],
     overlay=True
-).add_to(mapa)
+)
+google_satellite.add_to(mapa)
 
 # Convertir la imagen de Earth Engine a una capa de folium y añadirla al mapa
 map_id_dict = dataset.getMapId(vis_params)
-folium.TileLayer(
+lulc_layer = folium.TileLayer(
     tiles=map_id_dict['tile_fetcher'].url_format,
     attr='Google Earth Engine',
     overlay=True,
     name='LULC 2009-2015'
-).add_to(mapa)
+)
+lulc_layer.add_to(mapa)
 
 # Cargar el mapa raster desde Earth Engine y reclasificar los píxeles
-raster = ee.Image("projects/modern-renderer-413302/assets/AOD_2009_2015")
+raster = ee.Image("projects/modern-renderer-413302/assets/AOD_2009_2015_i")
 raster_reclassified = raster.expression(
     "b(0) <= 0 ? 1 : b(0) <= 0.04 ? 2 : b(0) <= 0.1 ? 3 : b(0) <= 0.15 ? 4 : b(0) <= 0.2 ? 5 : b(0) <= 0.3 ? 6 : b(0) <= 0.5 ? 7 : 8"
 )
@@ -57,26 +59,16 @@ raster_vis_params = {
 
 # Convertir el raster reclasificado y cortado a una capa de folium y añadirla al mapa
 raster_map_id_dict = raster_clipped.getMapId(raster_vis_params)
-folium.TileLayer(
+aod_layer = folium.TileLayer(
     tiles=raster_map_id_dict['tile_fetcher'].url_format,
     attr='Google Earth Engine',
     overlay=True,
     name='AOD Inicial Reclasificado'
-).add_to(mapa)
+)
+aod_layer.add_to(mapa)
 
-# Añadir control de capas personalizado
-folium.LayerControl(collapsed=False).add_to(mapa)
-
-# Mover el control de zoom a la parte izquierda superior del mapa
-mapa.get_root().html.add_child(folium.Element("""
-<style>
-.leaflet-control-zoom {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-}
-</style>
-"""))
+# Añadir el control de capas
+folium.LayerControl().add_to(mapa)
 
 # Guardar el mapa
 mapa.save(r"C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Visualizar_result\mapa_interactivo.html")

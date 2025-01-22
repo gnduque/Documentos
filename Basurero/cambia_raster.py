@@ -2,11 +2,11 @@ import rasterio
 import numpy as np
 
 # Ruta del raster inicial y del raster de salida
-ruta_raster_inicial = r"C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Clasifica_GEE\Rasteriza_lul_igm\rasterizado_lulc_igm.tif"
-ruta_raster_salida = r"C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Clasifica_GEE\Rasteriza_lul_igm\rasterizado_lulc_igm_actualizado.tif"
+ruta_raster_inicial = r"C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Clasifica_GEE\Rasteriza_lul_igm\rasterizado_lulc_igm_actual.tif"
+ruta_raster_salida = r"C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Clasifica_GEE\Rasteriza_lul_igm\rasterizado_lulc_igm_final.tif"
 
 # Diccionario para reasignar valores
-reemplazo_valores = {1: 9, 2: 8, 3: 7, 4: 6, 5: 5, 6: 4, 7: 3, 8: 2, 9: 10, 10: 1}
+reemplazo_valores = {1: 8, 2: 1, 3: 2, 4: 3, 5: 9, 6: 10, 7: 12, 8: 13, 9: 11, 10: 7}
 
 # Abrir el raster original
 with rasterio.open(ruta_raster_inicial) as src:

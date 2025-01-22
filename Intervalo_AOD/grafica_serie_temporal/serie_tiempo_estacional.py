@@ -28,6 +28,11 @@ def load_clean_and_resample(filepath, date_range, variables_to_keep, value_repla
     # Resampleo estacional: PM25 y AOD con promedio
     data.set_index('Fecha', inplace=True)
     resampled_data = data.resample('Q').agg({'AOD': 'mean', 'PM25': 'mean'}).reset_index()
+    
+    # Normalización de PM25 y AOD (min-max)
+    resampled_data['PM25_norm'] = (resampled_data['PM25'] - resampled_data['PM25'].min()) / (resampled_data['PM25'].max() - resampled_data['PM25'].min())
+    resampled_data['AOD_norm'] = (resampled_data['AOD'] - resampled_data['AOD'].min()) / (resampled_data['AOD'].max() - resampled_data['AOD'].min())
+
     return resampled_data
 
 # Parámetros
@@ -60,14 +65,14 @@ for i, filepath in enumerate(filepaths):
         ax1 = axes[i]
         ax2 = ax1.twinx()  # Crear el segundo eje y para AOD
         
-        # Graficar PM25 (promedio) en el eje y izquierdo
-        ax1.plot(data['Fecha'], data['PM25'], color='green', label='PM25 (Media)', linestyle='-', linewidth=1)
-        ax1.set_ylabel("PM25", fontsize=8, labelpad=2, color='green')
+        # Graficar PM25 normalizado (media) en el eje y izquierdo
+        ax1.plot(data['Fecha'], data['PM25_norm'], color='green', label='PM25 (Normalizado)', linestyle='-', linewidth=1)
+        ax1.set_ylabel("PM25 (Normalizado)", fontsize=8, labelpad=2, color='green')
         ax1.tick_params(axis='y', labelsize=8, labelcolor='green')
 
-        # Graficar AOD (media) en el eje y derecho
-        ax2.plot(data['Fecha'], data['AOD'], color='blue', label='AOD (Media)', linestyle='-', linewidth=1)
-        ax2.set_ylabel("AOD", fontsize=8, labelpad=2, color='blue')
+        # Graficar AOD normalizado (media) en el eje y derecho
+        ax2.plot(data['Fecha'], data['AOD_norm'], color='blue', label='AOD (Normalizado)', linestyle='-', linewidth=1)
+        ax2.set_ylabel("AOD (Normalizado)", fontsize=8, labelpad=2, color='blue')
         ax2.tick_params(axis='y', labelsize=8, labelcolor='blue')
         
         # Ajustar los valores del eje X (fechas con formato yy/mm/dd)
@@ -75,8 +80,8 @@ for i, filepath in enumerate(filepaths):
         ax1.set_xticklabels(data['Fecha'].dt.strftime('%y/%m/%d'), rotation=90, fontsize=5)  # Formato yy/mm/dd, rotación vertical
 
         # Limitar el largo de los ejes Y
-        ax1.set_ylim(data['PM25'].min() - 10, data['PM25'].max() + 10)
-        ax2.set_ylim(data['AOD'].min() - 0.05, data['AOD'].max() + 0.05)
+        ax1.set_ylim(data['PM25_norm'].min() - 0.05, data['PM25_norm'].max() + 0.05)
+        ax2.set_ylim(data['AOD_norm'].min() - 0.05, data['AOD_norm'].max() + 0.05)
 
         # Título y ajustes del gráfico
         ax1.set_title(station_name, fontsize=9)

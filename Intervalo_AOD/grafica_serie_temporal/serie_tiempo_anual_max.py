@@ -46,7 +46,7 @@ filepaths = [
 date_range = ("2016-02-08", "2024-02-13")
 variables_to_keep = ['Fecha', 'AOD', 'PM25']
 value_replacement = 0
-ranges = {'PM25': (0, 300)}  # Filtro antes del resampleo
+ranges = {'PM25': (0, 1200)}  # Filtro antes del resampleo
 
 # Crear la figura y los subgráficos
 fig, axes = plt.subplots(3, 3, figsize=(9, 9))  # Tamaño más pequeño para gráficos compactos

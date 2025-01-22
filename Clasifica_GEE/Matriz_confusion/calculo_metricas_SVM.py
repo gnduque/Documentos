@@ -5,8 +5,8 @@ import csv
 from rasterio.warp import calculate_default_transform, reproject, Resampling
 
 # Paths de los archivos raster
-raster_real_path = r"C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Clasifica_GEE\Rasteriza_lul_igm\rasterizado_lulc_igm_actual.tif"
-raster_pred_path = r"C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Clasifica_GEE\Clasifica_RF_CART_SVM\Raster_Results\LULC_2009_2015_SVM.tif"
+raster_real_path = r"C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Clasifica_GEE\Rasteriza_lulc\rasterizado_lulc_maate_final.tif"
+raster_pred_path = r"C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Clasifica_GEE\Clasifica_RF_CART_SVM\Raster_Results\LULC_2020_2022_SVM_reclass_maate.tif"
 output_dir = r"C:\Users\gisse\OneDrive\Escritorio\Repositorio\Documentos\Clasifica_GEE\Matriz_confusion"
 
 # Cambiar la proyección de un raster
@@ -107,7 +107,7 @@ try:
     derived_metrics = calculate_derived_metrics(total_metrics)
 
     # Guardar métricas en CSV
-    metrics_csv_path = os.path.join(output_dir, "classification_metrics_SVM.csv")
+    metrics_csv_path = os.path.join(output_dir, "classification_metrics_SVM_2020_2022.csv")
     save_metrics_to_csv(metrics, derived_metrics, metrics_csv_path)
 
     print("Métricas guardadas en:")

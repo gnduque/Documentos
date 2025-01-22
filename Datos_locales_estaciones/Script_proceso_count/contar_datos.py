@@ -58,6 +58,10 @@ for file in csv_files:
 
         # Reemplazar valores NaN en la columna AOD con 0
         if 'AOD' in df.columns:
+        # Multiplicar la columna AOD por 0.01
+            df['AOD'] = df['AOD'] * 0.01
+    
+        # Luego reemplazar NaN con 0
             df['AOD'] = df['AOD'].fillna(0)
 
         # Eliminar filas con valores NaN

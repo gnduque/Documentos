@@ -43,8 +43,8 @@ for archivo in archivos:
     # Filtrar y seleccionar solo las columnas relevantes
     df = df[['Estacion', 'Categoria', 'Valor Categoria', 'AOD', 'Min', 'Max', 'Periodo', 'Año']]
     
-    # Filtrar solo las filas correspondientes a la categoría 'IQCA' y AOD_moda
-    df = df[(df['Categoria'] == 'IQCA') & (df['AOD'] == 'AOD_moda')]
+    # Filtrar solo las filas correspondientes a la categoría 'IQCA' y AOD_mean
+    df = df[(df['Categoria'] == 'IQCA') & (df['AOD'] == 'AOD_mean')]
     
     # Concatenar los datos al dataframe final
     df_final = pd.concat([df_final, df])
